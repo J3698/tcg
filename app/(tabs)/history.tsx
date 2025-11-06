@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, Pressable, Text, FlatList } from 'react-native';
 import { Image } from 'expo-image';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
@@ -28,6 +29,7 @@ interface Sale {
 
 export default function HistoryScreen() {
   const colorScheme = useColorScheme();
+  const insets = useSafeAreaInsets();
   const colors = Colors[colorScheme ?? 'light'];
   const [selectedCard, setSelectedCard] = useState<HistoryCard | null>(null);
 
@@ -125,7 +127,7 @@ export default function HistoryScreen() {
 
   if (selectedCard) {
     return (
-      <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+      <ScrollView style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
         <Pressable
           onPress={() => setSelectedCard(null)}
           style={styles.backButton}>
@@ -212,7 +214,7 @@ export default function HistoryScreen() {
   }
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <ThemedView style={styles.header}>
         <ThemedText type="title">Scan History</ThemedText>
         <ThemedText style={styles.subtitle}>
