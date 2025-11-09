@@ -54,15 +54,21 @@ export default function HomeScreen() {
         const progress = i / points;
         const baseTrend = cardCurrentPrice * 0.15 + progress * cardCurrentPrice * 0.85;
 
-        const changePercent = (Math.random() - 0.48) * 8;
+        // Larger daily swings: -15% to +15%
+        const changePercent = (Math.random() - 0.5) * 30;
         price = price * (1 + changePercent / 100);
 
-        if (Math.random() < 0.08) {
-          price = price * (1 + (Math.random() - 0.5) * 0.15);
+        // Random market events/spikes: 15% chance of significant move (±10% to ±25%)
+        if (Math.random() < 0.15) {
+          const eventSize = (Math.random() - 0.5) * 0.35;
+          price = price * (1 + eventSize);
         }
 
-        price = price * 0.97 + baseTrend * 0.03;
-        price = Math.max(price * 0.5, Math.min(price * 2, price));
+        // Smooth towards trend: 92% momentum, 8% trend
+        price = price * 0.92 + baseTrend * 0.08;
+
+        // Prevent extreme outliers
+        price = Math.max(cardCurrentPrice * 0.05, Math.min(cardCurrentPrice * 2.5, price));
 
         data.push(Math.round(price));
       }
