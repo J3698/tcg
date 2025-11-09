@@ -286,7 +286,31 @@ export default function HomeScreen() {
 
               <View style={[styles.lineChart, { height: 120 }]}>
                 <View style={[styles.chartArea, { paddingRight: 16, paddingTop: 10, paddingBottom: 10 }]}>
-                  {/* Draw lines */}
+                  {/* Draw dots first (so they appear on top) */}
+                  {card.monthlyData.map((value, dotIdx, arr) => {
+                    const x = (dotIdx / (arr.length - 1)) * 97;
+                    const y = 5 + ((gainerMaxValue - value) / gainerRange) * 90;
+
+                    return (
+                      <View
+                        key={`dot-${dotIdx}`}
+                        style={{
+                          position: 'absolute',
+                          left: `${x}%`,
+                          top: `${y}%`,
+                          width: 4,
+                          height: 4,
+                          borderRadius: 2,
+                          backgroundColor: '#10b981',
+                          marginLeft: -2,
+                          marginTop: -2,
+                          zIndex: 2,
+                        }}
+                      />
+                    );
+                  })}
+
+                  {/* Draw lines behind dots */}
                   {card.monthlyData.map((value, lineIdx, arr) => {
                     if (lineIdx === arr.length - 1) return null;
 
@@ -312,29 +336,7 @@ export default function HomeScreen() {
                           backgroundColor: '#10b981',
                           transform: [{ rotate: `${angle}deg` }],
                           transformOrigin: 'left center',
-                        }}
-                      />
-                    );
-                  })}
-
-                  {/* Draw dots */}
-                  {card.monthlyData.map((value, dotIdx, arr) => {
-                    const x = (dotIdx / (arr.length - 1)) * 97;
-                    const y = 5 + ((gainerMaxValue - value) / gainerRange) * 90;
-
-                    return (
-                      <View
-                        key={`dot-${dotIdx}`}
-                        style={{
-                          position: 'absolute',
-                          left: `${x}%`,
-                          top: `${y}%`,
-                          width: 3,
-                          height: 3,
-                          borderRadius: 1.5,
-                          backgroundColor: '#10b981',
-                          marginLeft: -1.5,
-                          marginTop: -1.5,
+                          zIndex: 1,
                         }}
                       />
                     );
@@ -385,7 +387,31 @@ export default function HomeScreen() {
 
               <View style={[styles.lineChart, { height: 120 }]}>
                 <View style={[styles.chartArea, { paddingRight: 16, paddingTop: 10, paddingBottom: 10 }]}>
-                  {/* Draw lines */}
+                  {/* Draw dots first (so they appear on top) */}
+                  {card.monthlyData.map((value, dotIdx, arr) => {
+                    const x = (dotIdx / (arr.length - 1)) * 97;
+                    const y = 5 + ((loserMaxValue - value) / loserRange) * 90;
+
+                    return (
+                      <View
+                        key={`dot-${dotIdx}`}
+                        style={{
+                          position: 'absolute',
+                          left: `${x}%`,
+                          top: `${y}%`,
+                          width: 4,
+                          height: 4,
+                          borderRadius: 2,
+                          backgroundColor: '#ef4444',
+                          marginLeft: -2,
+                          marginTop: -2,
+                          zIndex: 2,
+                        }}
+                      />
+                    );
+                  })}
+
+                  {/* Draw lines behind dots */}
                   {card.monthlyData.map((value, lineIdx, arr) => {
                     if (lineIdx === arr.length - 1) return null;
 
@@ -411,29 +437,7 @@ export default function HomeScreen() {
                           backgroundColor: '#ef4444',
                           transform: [{ rotate: `${angle}deg` }],
                           transformOrigin: 'left center',
-                        }}
-                      />
-                    );
-                  })}
-
-                  {/* Draw dots */}
-                  {card.monthlyData.map((value, dotIdx, arr) => {
-                    const x = (dotIdx / (arr.length - 1)) * 97;
-                    const y = 5 + ((loserMaxValue - value) / loserRange) * 90;
-
-                    return (
-                      <View
-                        key={`dot-${dotIdx}`}
-                        style={{
-                          position: 'absolute',
-                          left: `${x}%`,
-                          top: `${y}%`,
-                          width: 3,
-                          height: 3,
-                          borderRadius: 1.5,
-                          backgroundColor: '#ef4444',
-                          marginLeft: -1.5,
-                          marginTop: -1.5,
+                          zIndex: 1,
                         }}
                       />
                     );
