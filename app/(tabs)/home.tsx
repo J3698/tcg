@@ -284,8 +284,8 @@ export default function HomeScreen() {
                 </ThemedText>
               </View>
 
-              <View style={[styles.lineChart, { height: 100 }]}>
-                <View style={styles.chartArea}>
+              <View style={[styles.lineChart, { height: 120 }]}>
+                <View style={[styles.chartArea, { paddingRight: 16, paddingTop: 10, paddingBottom: 10 }]}>
                   {/* Draw lines */}
                   {card.monthlyData.map((value, lineIdx, arr) => {
                     if (lineIdx === arr.length - 1) return null;
@@ -383,8 +383,8 @@ export default function HomeScreen() {
                 </ThemedText>
               </View>
 
-              <View style={[styles.lineChart, { height: 100 }]}>
-                <View style={styles.chartArea}>
+              <View style={[styles.lineChart, { height: 120 }]}>
+                <View style={[styles.chartArea, { paddingRight: 16, paddingTop: 10, paddingBottom: 10 }]}>
                   {/* Draw lines */}
                   {card.monthlyData.map((value, lineIdx, arr) => {
                     if (lineIdx === arr.length - 1) return null;
