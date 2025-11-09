@@ -5,7 +5,7 @@ import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { collectionCards, portfolioData } from '@/constants/portfolio-data';
+import { collectionCards, portfolioData as fullPortfolioData } from '@/constants/portfolio-data';
 
 type TrendPeriod = 'day' | 'week' | 'month' | 'year' | 'all';
 
@@ -32,11 +32,11 @@ export default function HomeScreen() {
     // Year = last 150 points (approx last 825 days / 2.25 years)
     // All = all 200 points (3 years)
     const data = {
-      day: portfolioData.slice(-8),
-      week: portfolioData.slice(-40),
-      month: portfolioData.slice(-80),
-      year: portfolioData.slice(-150),
-      all: portfolioData,
+      day: fullPortfolioData.slice(-8),
+      week: fullPortfolioData.slice(-40),
+      month: fullPortfolioData.slice(-80),
+      year: fullPortfolioData.slice(-150),
+      all: fullPortfolioData,
     };
     return data[portfolioTrend];
   };
