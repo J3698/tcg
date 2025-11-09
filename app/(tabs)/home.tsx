@@ -115,9 +115,11 @@ export default function HomeScreen() {
   // Generate smart Y-axis ticks (4-6 ticks with nice round numbers)
   const generateYAxisTicks = () => {
     const range = maxValue - minValue;
-    const intervals = [500, 250, 100, 50, 25, 10, 5, 1];
+    // Intervals from smallest to largest: 1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000
+    const intervals = [1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000];
     let tickInterval = 1;
 
+    // Find the best interval that gives us 4-6 ticks
     for (const interval of intervals) {
       const numTicks = Math.ceil(range / interval);
       if (numTicks >= 4 && numTicks <= 6) {
