@@ -35,13 +35,18 @@ function seededRandom(): number {
 /**
  * Generate deterministic portfolio data based on collection cards
  * Uses seeded random numbers so data stays consistent across sessions
+ * Also returns individual card price histories
  */
-export function generatePortfolioData(): number[] {
+export function generatePortfolioDataWithCards(): {
+  portfolio: number[];
+  cardPrices: Map<string, number[]>;
+} {
   const points = 200;
   const collectionData: number[] = [];
+  const cardPrices = new Map<string, number[]>();
 
   // Generate individual price trends for each card
-  const cardPrices = collectionCards.map(card => {
+  collectionCards.forEach(card => {
     const data: number[] = [];
     const cardCurrentPrice = parseInt(card.price.replace(/[$,]/g, ''));
     let price = cardCurrentPrice * 0.15; // Start at 15% of current value
@@ -68,7 +73,7 @@ export function generatePortfolioData(): number[] {
 
       data.push(Math.round(price));
     }
-    return data;
+    cardPrices.set(card.name, data);
   });
 
   // Sum all card prices at each point to get total portfolio value
@@ -80,8 +85,68 @@ export function generatePortfolioData(): number[] {
     collectionData.push(Math.round(total));
   }
 
-  return collectionData;
+  return { portfolio: collectionData, cardPrices };
 }
 
 // Pre-generate and cache the data
-export const portfolioData = generatePortfolioData();
+const { portfolio: portfolioData, cardPrices: cardPricesData } = generatePortfolioDataWithCards();
+export { portfolioData, cardPricesData };
+
+/**
+ * Calculate top movers for the last month (80 data points)
+ */
+export interface TopMover {
+  name: string;
+  set: string;
+  change: string;
+  percentChange: number;
+  priceStart: number;
+  priceEnd: number;
+  monthlyData: number[];
+}
+
+export function getTopMovers(): {
+  gainers: TopMover[];
+  losers: TopMover[];
+} {
+  const monthDataPoints = 80;
+  const gainers: TopMover[] = [];
+  const losers: TopMover[] = [];
+
+  collectionCards.forEach(card => {
+    const cardData = cardPricesData.get(card.name);
+    if (!cardData) return;
+
+    // Get last 80 points (1 month)
+    const monthlyData = cardData.slice(-monthDataPoints);
+    const priceStart = monthlyData[0];
+    const priceEnd = monthlyData[monthlyData.length - 1];
+    const change = priceEnd - priceStart;
+    const percentChange = ((change / priceStart) * 100);
+
+    const mover: TopMover = {
+      name: card.name,
+      set: card.set,
+      change: `${change > 0 ? '+' : ''}$${Math.round(change)}`,
+      percentChange,
+      priceStart,
+      priceEnd,
+      monthlyData,
+    };
+
+    if (change > 0) {
+      gainers.push(mover);
+    } else {
+      losers.push(mover);
+    }
+  });
+
+  // Sort by absolute change
+  gainers.sort((a, b) => b.priceEnd - b.priceStart - (a.priceEnd - a.priceStart));
+  losers.sort((a, b) => a.priceEnd - a.priceStart - (b.priceEnd - b.priceStart));
+
+  return {
+    gainers: gainers.slice(0, 5),
+    losers: losers.slice(0, 5),
+  };
+}
