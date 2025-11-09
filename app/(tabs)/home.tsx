@@ -38,58 +38,66 @@ export default function HomeScreen() {
     { name: 'Lapras', set: 'Base Set', grade: '7', price: '$900' },
   ];
 
-  const getPortfolioData = () => {
+  const generateFullPortfolioData = () => {
     // Generate realistic market data for entire collection with 200 data points over 3 years
-    // Total value grows from ~$2000 to ~$14,000+ based on all cards in collection
-    const generateCollectionData = () => {
-      const points = 200;
-      const collectionData = [0];
+    // 200 points = 3 years of data, approximately 1 point every 5.5 days
+    const points = 200;
+    const collectionData = [0];
 
-      // Generate individual price trends for each card
-      const cardPrices = collectionCards.map(card => {
-        const data = [0];
-        let price = parseInt(card.price.replace(/[$,]/g, '')) * 0.15; // Start at 15% of current value
+    // Generate individual price trends for each card
+    const cardPrices = collectionCards.map(card => {
+      const data = [0];
+      const cardCurrentPrice = parseInt(card.price.replace(/[$,]/g, ''));
+      let price = cardCurrentPrice * 0.15; // Start at 15% of current value
 
-        for (let i = 1; i < points; i++) {
-          const progress = i / points;
-          const baseTrend = price * 0.15 + progress * parseInt(card.price.replace(/[$,]/g, '')) * 0.85;
+      for (let i = 1; i < points; i++) {
+        const progress = i / points;
+        const baseTrend = cardCurrentPrice * 0.15 + progress * cardCurrentPrice * 0.85;
 
-          const changePercent = (Math.random() - 0.48) * 8;
-          price = price * (1 + changePercent / 100);
+        const changePercent = (Math.random() - 0.48) * 8;
+        price = price * (1 + changePercent / 100);
 
-          if (Math.random() < 0.08) {
-            price = price * (1 + (Math.random() - 0.5) * 0.15);
-          }
-
-          price = price * 0.97 + baseTrend * 0.03;
-          price = Math.max(price * 0.5, Math.min(price * 2, price));
-
-          data.push(Math.round(price));
+        if (Math.random() < 0.08) {
+          price = price * (1 + (Math.random() - 0.5) * 0.15);
         }
-        return data;
-      });
 
-      // Sum all card prices at each point
-      for (let i = 0; i < points; i++) {
-        let total = 0;
-        cardPrices.forEach(cardData => {
-          total += cardData[i];
-        });
-        collectionData.push(Math.round(total));
+        price = price * 0.97 + baseTrend * 0.03;
+        price = Math.max(price * 0.5, Math.min(price * 2, price));
+
+        data.push(Math.round(price));
       }
+      return data;
+    });
 
-      return collectionData;
-    };
+    // Sum all card prices at each point to get total portfolio value
+    for (let i = 0; i < points; i++) {
+      let total = 0;
+      cardPrices.forEach(cardData => {
+        total += cardData[i];
+      });
+      collectionData.push(Math.round(total));
+    }
 
-    const allData = generateCollectionData();
+    return collectionData;
+  };
 
-    // Subsample for different time periods
+  // Generate full data once
+  const allPortfolioData = generateFullPortfolioData();
+
+  // Get data based on trend period
+  const getPortfolioData = () => {
+    // 200 points over 3 years
+    // Day = last 8 points (approx last 44 days)
+    // Week = last 40 points (approx last 220 days)
+    // Month = last 80 points (approx last 440 days / 1.2 years)
+    // Year = last 150 points (approx last 825 days / 2.25 years)
+    // All = all 200 points (3 years)
     const data = {
-      day: allData.slice(-8),
-      week: allData.slice(-40),
-      month: allData.slice(-80),
-      year: allData.slice(-150),
-      all: allData,
+      day: allPortfolioData.slice(-8),
+      week: allPortfolioData.slice(-40),
+      month: allPortfolioData.slice(-80),
+      year: allPortfolioData.slice(-150),
+      all: allPortfolioData,
     };
     return data[portfolioTrend];
   };
@@ -101,11 +109,11 @@ export default function HomeScreen() {
   ];
 
   const portfolioData = getPortfolioData();
+  const minValue = Math.min(...portfolioData);
   const maxValue = Math.max(...portfolioData);
 
   // Generate smart Y-axis ticks (4-6 ticks with nice round numbers)
   const generateYAxisTicks = () => {
-    const minValue = Math.min(...portfolioData);
     const range = maxValue - minValue;
     const intervals = [500, 250, 100, 50, 25, 10, 5, 1];
     let tickInterval = 1;
@@ -141,7 +149,6 @@ export default function HomeScreen() {
 
   const yAxisTicks = generateYAxisTicks();
   const xAxisLabels = generateXAxisTicks();
-  const minValue = Math.min(...portfolioData);
   const dataRange = maxValue - minValue;
 
   // Total portfolio value (sum of all cards)
