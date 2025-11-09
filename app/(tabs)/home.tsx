@@ -256,96 +256,35 @@ export default function HomeScreen() {
           Cards with biggest price increases (30d)
         </ThemedText>
 
-        {/* Gainers Charts */}
-        {gainers.map((card, idx) => {
-          const gainerMinValue = Math.min(...card.monthlyData);
-          const gainerMaxValue = Math.max(...card.monthlyData);
-          const gainerRange = gainerMaxValue - gainerMinValue;
-
-          return (
-            <ThemedView key={`gainer-${idx}`} style={[styles.lineChartContainer, { borderColor: colors.tabIconDefault, marginBottom: 16 }]}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <View>
-                  <ThemedText type="defaultSemiBold">{card.name}</ThemedText>
-                  <ThemedText style={styles.cardSubtext}>{card.set}</ThemedText>
-                </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <ThemedText type="defaultSemiBold" style={{ color: '#10b981' }}>
-                    {card.change}
-                  </ThemedText>
-                  <ThemedText style={[styles.cardSubtext, { color: '#10b981' }]}>
-                    {card.percentChange.toFixed(1)}%
-                  </ThemedText>
-                </View>
+        {/* Gainers List */}
+        {gainers.map((card, idx) => (
+          <ThemedView key={`gainer-${idx}`} style={{ paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.tabIconDefault }}>
+            <View style={{ flexDirection: 'row', marginBottom: 8 }}>
+              <ThemedText type="defaultSemiBold" style={{ width: 24, color: '#10b981' }}>
+                {idx + 1}.
+              </ThemedText>
+              <View style={{ flex: 1 }}>
+                <ThemedText type="defaultSemiBold">{card.name}</ThemedText>
+                <ThemedText style={styles.cardSubtext}>{card.set}</ThemedText>
               </View>
-              <View style={{ marginBottom: 12, flexDirection: 'row', justifyContent: 'space-between' }}>
+            </View>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <View>
+                <ThemedText style={[styles.cardSubtext, { marginBottom: 4 }]}>
+                  Increase: <ThemedText type="defaultSemiBold" style={{ color: '#10b981' }}>{card.change}</ThemedText>
+                </ThemedText>
+                <ThemedText style={[styles.cardSubtext, { marginBottom: 4 }]}>
+                  Change: <ThemedText type="defaultSemiBold" style={{ color: '#10b981' }}>{card.percentChange.toFixed(1)}%</ThemedText>
+                </ThemedText>
                 <ThemedText style={styles.cardSubtext}>
-                  ${Math.round(card.priceStart)} → ${Math.round(card.priceEnd)}
+                  Price: <ThemedText style={{ color: colors.text }}>
+                    ${Math.round(card.priceStart)} → ${Math.round(card.priceEnd)}
+                  </ThemedText>
                 </ThemedText>
               </View>
-
-              <View style={[styles.lineChart, { height: 120 }]}>
-                <View style={[styles.chartArea, { paddingRight: 16, paddingTop: 10, paddingBottom: 10 }]}>
-                  {/* Draw dots first (so they appear on top) */}
-                  {card.monthlyData.map((value, dotIdx, arr) => {
-                    const x = (dotIdx / (arr.length - 1)) * 97;
-                    const y = 5 + ((gainerMaxValue - value) / gainerRange) * 90;
-
-                    return (
-                      <View
-                        key={`dot-${dotIdx}`}
-                        style={{
-                          position: 'absolute',
-                          left: `${x}%`,
-                          top: `${y}%`,
-                          width: 4,
-                          height: 4,
-                          borderRadius: 2,
-                          backgroundColor: '#10b981',
-                          marginLeft: -2,
-                          marginTop: -2,
-                          zIndex: 2,
-                        }}
-                      />
-                    );
-                  })}
-
-                  {/* Draw lines behind dots */}
-                  {card.monthlyData.map((value, lineIdx, arr) => {
-                    if (lineIdx === arr.length - 1) return null;
-
-                    const x1Percent = (lineIdx / (arr.length - 1)) * 97;
-                    const x2Percent = ((lineIdx + 1) / (arr.length - 1)) * 97;
-                    const y1 = 5 + ((gainerMaxValue - value) / gainerRange) * 90;
-                    const y2 = 5 + ((gainerMaxValue - arr[lineIdx + 1]) / gainerRange) * 90;
-
-                    const dxPercent = x2Percent - x1Percent;
-                    const dyPercent = y2 - y1;
-                    const distance = Math.sqrt(dxPercent * dxPercent + dyPercent * dyPercent);
-                    const angle = Math.atan2(dyPercent, dxPercent) * (180 / Math.PI);
-
-                    return (
-                      <View
-                        key={`line-${lineIdx}`}
-                        style={{
-                          position: 'absolute',
-                          left: `${x1Percent}%`,
-                          top: `${y1}%`,
-                          width: `${distance}%`,
-                          height: 2,
-                          backgroundColor: '#10b981',
-                          transform: [{ rotate: `${angle}deg` }],
-                          transformOrigin: 'left center',
-                          zIndex: 1,
-                        }}
-                      />
-                    );
-                  })}
-                </View>
-              </View>
-            </ThemedView>
-          );
-        })}
+            </View>
+          </ThemedView>
+        ))}
       </ThemedView>
 
       {/* Top Losers */}
