@@ -259,30 +259,28 @@ export default function HomeScreen() {
         {/* Gainers List */}
         {gainers.map((card, idx) => (
           <ThemedView key={`gainer-${idx}`} style={{ paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.tabIconDefault }}>
-            <View style={{ flexDirection: 'row', marginBottom: 8 }}>
-              <ThemedText type="defaultSemiBold" style={{ width: 24, color: '#10b981' }}>
-                {idx + 1}.
-              </ThemedText>
-              <View style={{ flex: 1 }}>
-                <ThemedText type="defaultSemiBold">{card.name}</ThemedText>
-                <ThemedText style={styles.cardSubtext}>{card.set}</ThemedText>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+              <View style={{ flexDirection: 'row', flex: 1 }}>
+                <ThemedText type="defaultSemiBold" style={{ width: 24, color: '#10b981' }}>
+                  {idx + 1}.
+                </ThemedText>
+                <View style={{ flex: 1 }}>
+                  <ThemedText type="defaultSemiBold">{card.name}</ThemedText>
+                  <ThemedText style={styles.cardSubtext}>{card.set}</ThemedText>
+                </View>
               </View>
-            </View>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <View>
-                <ThemedText style={[styles.cardSubtext, { marginBottom: 4 }]}>
-                  Increase: <ThemedText type="defaultSemiBold" style={{ color: '#10b981' }}>{card.change}</ThemedText>
+              <View style={{ alignItems: 'flex-end' }}>
+                <ThemedText type="defaultSemiBold" style={{ color: '#10b981', marginBottom: 2 }}>
+                  {card.change}
                 </ThemedText>
-                <ThemedText style={[styles.cardSubtext, { marginBottom: 4 }]}>
-                  Change: <ThemedText type="defaultSemiBold" style={{ color: '#10b981' }}>{card.percentChange.toFixed(1)}%</ThemedText>
-                </ThemedText>
-                <ThemedText style={styles.cardSubtext}>
-                  Price: <ThemedText style={{ color: colors.text }}>
-                    ${Math.round(card.priceStart)} → ${Math.round(card.priceEnd)}
-                  </ThemedText>
+                <ThemedText type="defaultSemiBold" style={{ color: '#10b981' }}>
+                  {card.percentChange.toFixed(1)}%
                 </ThemedText>
               </View>
             </View>
+            <ThemedText style={styles.cardSubtext}>
+              ${Math.round(card.priceStart)} → ${Math.round(card.priceEnd)}
+            </ThemedText>
           </ThemedView>
         ))}
       </ThemedView>
