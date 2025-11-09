@@ -278,6 +278,11 @@ export default function HomeScreen() {
                   </ThemedText>
                 </View>
               </View>
+              <View style={{ marginBottom: 12, flexDirection: 'row', justifyContent: 'space-between' }}>
+                <ThemedText style={styles.cardSubtext}>
+                  ${Math.round(card.priceStart)} → ${Math.round(card.priceEnd)}
+                </ThemedText>
+              </View>
 
               <View style={[styles.lineChart, { height: 150 }]}>
                 <View style={styles.chartArea}>
@@ -371,6 +376,11 @@ export default function HomeScreen() {
                     {card.percentChange.toFixed(1)}%
                   </ThemedText>
                 </View>
+              </View>
+              <View style={{ marginBottom: 12, flexDirection: 'row', justifyContent: 'space-between' }}>
+                <ThemedText style={styles.cardSubtext}>
+                  ${Math.round(card.priceStart)} → ${Math.round(card.priceEnd)}
+                </ThemedText>
               </View>
 
               <View style={[styles.lineChart, { height: 150 }]}>
