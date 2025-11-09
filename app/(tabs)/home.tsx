@@ -42,15 +42,15 @@ export default function HomeScreen() {
     // Generate realistic market data for entire collection with 200 data points over 3 years
     // 200 points = 3 years of data, approximately 1 point every 5.5 days
     const points = 200;
-    const collectionData = [0];
+    const collectionData = [];
 
     // Generate individual price trends for each card
     const cardPrices = collectionCards.map(card => {
-      const data = [0];
+      const data = [];
       const cardCurrentPrice = parseInt(card.price.replace(/[$,]/g, ''));
       let price = cardCurrentPrice * 0.15; // Start at 15% of current value
 
-      for (let i = 1; i < points; i++) {
+      for (let i = 0; i < points; i++) {
         const progress = i / points;
         const baseTrend = cardCurrentPrice * 0.15 + progress * cardCurrentPrice * 0.85;
 
