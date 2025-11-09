@@ -23,36 +23,49 @@ export default function HomeScreen() {
   ];
 
   const getPortfolioData = () => {
-    // Generate realistic market data with 200 data points over 3 years
-    // Starts at $200, ends at $1600, with realistic jumpy volatility
-    const generateData = () => {
+    // Generate realistic market data for entire collection with 200 data points over 3 years
+    // Total value grows from ~$2000 to ~$14,000+ based on all cards in collection
+    const generateCollectionData = () => {
       const points = 200;
-      const data = [200];
-      let price = 200;
+      const collectionData = [0];
 
-      for (let i = 1; i < points; i++) {
-        const progress = i / points; // 0 to 1
-        const baseTrend = 200 + progress * 1400; // Uptrend from 200 to 1600
+      // Generate individual price trends for each card
+      const cardPrices = collectionCards.map(card => {
+        const data = [0];
+        let price = parseInt(card.price.replace(/[$,]/g, '')) * 0.15; // Start at 15% of current value
 
-        // Random walk with momentum - more like real market data
-        const changePercent = (Math.random() - 0.48) * 8; // -4% to +4% swings
-        price = price * (1 + changePercent / 100);
+        for (let i = 1; i < points; i++) {
+          const progress = i / points;
+          const baseTrend = price * 0.15 + progress * parseInt(card.price.replace(/[$,]/g, '')) * 0.85;
 
-        // Occasional bigger jumps (market events)
-        if (Math.random() < 0.08) {
-          price = price * (1 + (Math.random() - 0.5) * 0.15);
+          const changePercent = (Math.random() - 0.48) * 8;
+          price = price * (1 + changePercent / 100);
+
+          if (Math.random() < 0.08) {
+            price = price * (1 + (Math.random() - 0.5) * 0.15);
+          }
+
+          price = price * 0.97 + baseTrend * 0.03;
+          price = Math.max(price * 0.5, Math.min(price * 2, price));
+
+          data.push(Math.round(price));
         }
+        return data;
+      });
 
-        // Pull toward trend line gently
-        price = price * 0.97 + baseTrend * 0.03;
-
-        price = Math.max(150, Math.min(2000, price));
-        data.push(Math.round(price));
+      // Sum all card prices at each point
+      for (let i = 0; i < points; i++) {
+        let total = 0;
+        cardPrices.forEach(cardData => {
+          total += cardData[i];
+        });
+        collectionData.push(Math.round(total));
       }
-      return data;
+
+      return collectionData;
     };
 
-    const allData = generateData();
+    const allData = generateCollectionData();
 
     // Subsample for different time periods
     const data = {
@@ -117,18 +130,18 @@ export default function HomeScreen() {
 
   // Portfolio collection data
   const collectionCards = [
-    { name: 'Charizard', set: 'Base Set', grade: '8.5', price: '$1,600' },
-    { name: 'Blastoise', set: 'Base Set', grade: '8.0', price: '$1,200' },
-    { name: 'Venusaur', set: 'Base Set', grade: '7.5', price: '$950' },
-    { name: 'Pikachu', set: 'Base Set', grade: '9.0', price: '$2,100' },
-    { name: 'Dragonite', set: 'Base Set', grade: '7.0', price: '$850' },
-    { name: 'Gyarados', set: 'Base Set', grade: '8.5', price: '$1,400' },
-    { name: 'Arcanine', set: 'Base Set', grade: '8.0', price: '$1,100' },
-    { name: 'Alakazam', set: 'Base Set', grade: '7.5', price: '$950' },
-    { name: 'Machamp', set: 'Base Set', grade: '9.0', price: '$1,950' },
-    { name: 'Golem', set: 'Base Set', grade: '8.5', price: '$1,350' },
-    { name: 'Flareon', set: 'Base Set', grade: '8.0', price: '$1,050' },
-    { name: 'Lapras', set: 'Base Set', grade: '7.5', price: '$900' },
+    { name: 'Charizard', set: 'Base Set', grade: '8', price: '$1,600' },
+    { name: 'Blastoise', set: 'Base Set', grade: '8', price: '$1,200' },
+    { name: 'Venusaur', set: 'Base Set', grade: '7', price: '$950' },
+    { name: 'Pikachu', set: 'Base Set', grade: '9', price: '$2,100' },
+    { name: 'Dragonite', set: 'Base Set', grade: '7', price: '$850' },
+    { name: 'Gyarados', set: 'Base Set', grade: '8', price: '$1,400' },
+    { name: 'Arcanine', set: 'Base Set', grade: '8', price: '$1,100' },
+    { name: 'Alakazam', set: 'Base Set', grade: '7', price: '$950' },
+    { name: 'Machamp', set: 'Base Set', grade: '9', price: '$1,950' },
+    { name: 'Golem', set: 'Base Set', grade: '8', price: '$1,350' },
+    { name: 'Flareon', set: 'Base Set', grade: '8', price: '$1,050' },
+    { name: 'Lapras', set: 'Base Set', grade: '7', price: '$900' },
   ];
 
   // Total portfolio value (sum of all cards)
