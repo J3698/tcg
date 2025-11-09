@@ -232,12 +232,14 @@ export default function HomeScreen() {
         <ThemedView style={[styles.lineChartContainer, { borderColor: colors.tabIconDefault }]}>
           <View style={{ flexDirection: 'row', flex: 1 }}>
             {/* Y-axis labels */}
-            <View style={{ width: 45, paddingRight: 10, justifyContent: 'space-between', paddingVertical: 16 }}>
-              {yAxisTicks.slice().reverse().map((tick, idx) => (
-                <ThemedText key={`y-tick-${idx}`} style={styles.axisLabel}>
-                  ${tick}
-                </ThemedText>
-              ))}
+            <View style={{ width: 45, paddingRight: 10 }}>
+              <View style={{ height: 300, justifyContent: 'space-between', paddingVertical: 0 }}>
+                {yAxisTicks.slice().reverse().map((tick, idx) => (
+                  <ThemedText key={`y-tick-${idx}`} style={styles.axisLabel}>
+                    ${tick}
+                  </ThemedText>
+                ))}
+              </View>
             </View>
 
             <View style={{ flex: 1 }}>
