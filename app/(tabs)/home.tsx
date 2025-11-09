@@ -22,6 +22,22 @@ export default function HomeScreen() {
     { label: 'All', value: 'all' },
   ];
 
+  // Portfolio collection data
+  const collectionCards = [
+    { name: 'Charizard', set: 'Base Set', grade: '8', price: '$1,600' },
+    { name: 'Blastoise', set: 'Base Set', grade: '8', price: '$1,200' },
+    { name: 'Venusaur', set: 'Base Set', grade: '7', price: '$950' },
+    { name: 'Pikachu', set: 'Base Set', grade: '9', price: '$2,100' },
+    { name: 'Dragonite', set: 'Base Set', grade: '7', price: '$850' },
+    { name: 'Gyarados', set: 'Base Set', grade: '8', price: '$1,400' },
+    { name: 'Arcanine', set: 'Base Set', grade: '8', price: '$1,100' },
+    { name: 'Alakazam', set: 'Base Set', grade: '7', price: '$950' },
+    { name: 'Machamp', set: 'Base Set', grade: '9', price: '$1,950' },
+    { name: 'Golem', set: 'Base Set', grade: '8', price: '$1,350' },
+    { name: 'Flareon', set: 'Base Set', grade: '8', price: '$1,050' },
+    { name: 'Lapras', set: 'Base Set', grade: '7', price: '$900' },
+  ];
+
   const getPortfolioData = () => {
     // Generate realistic market data for entire collection with 200 data points over 3 years
     // Total value grows from ~$2000 to ~$14,000+ based on all cards in collection
@@ -127,22 +143,6 @@ export default function HomeScreen() {
   const xAxisLabels = generateXAxisTicks();
   const minValue = Math.min(...portfolioData);
   const dataRange = maxValue - minValue;
-
-  // Portfolio collection data
-  const collectionCards = [
-    { name: 'Charizard', set: 'Base Set', grade: '8', price: '$1,600' },
-    { name: 'Blastoise', set: 'Base Set', grade: '8', price: '$1,200' },
-    { name: 'Venusaur', set: 'Base Set', grade: '7', price: '$950' },
-    { name: 'Pikachu', set: 'Base Set', grade: '9', price: '$2,100' },
-    { name: 'Dragonite', set: 'Base Set', grade: '7', price: '$850' },
-    { name: 'Gyarados', set: 'Base Set', grade: '8', price: '$1,400' },
-    { name: 'Arcanine', set: 'Base Set', grade: '8', price: '$1,100' },
-    { name: 'Alakazam', set: 'Base Set', grade: '7', price: '$950' },
-    { name: 'Machamp', set: 'Base Set', grade: '9', price: '$1,950' },
-    { name: 'Golem', set: 'Base Set', grade: '8', price: '$1,350' },
-    { name: 'Flareon', set: 'Base Set', grade: '8', price: '$1,050' },
-    { name: 'Lapras', set: 'Base Set', grade: '7', price: '$900' },
-  ];
 
   // Total portfolio value (sum of all cards)
   const totalPortfolioValue = collectionCards.reduce((sum, card) => {
