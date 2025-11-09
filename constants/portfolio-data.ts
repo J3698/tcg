@@ -46,7 +46,7 @@ export function generatePortfolioDataWithCards(): {
   const cardPrices = new Map<string, number[]>();
 
   // Generate individual price trends for each card
-  collectionCards.forEach(card => {
+  collectionCards.forEach((card, cardIdx) => {
     const data: number[] = [];
     const cardCurrentPrice = parseInt(card.price.replace(/[$,]/g, ''));
     let price = cardCurrentPrice * 0.15; // Start at 15% of current value
@@ -66,7 +66,10 @@ export function generatePortfolioDataWithCards(): {
       }
 
       // Smooth towards trend: 92% momentum, 8% trend
-      price = price * 0.92 + baseTrend * 0.08;
+      // Add variation: some cards have less upward bias than others
+      const momentumFactor = 0.92 - (cardIdx % 3) * 0.05; // Some cards have 87%, 92% momentum
+      const trendFactor = 1 - momentumFactor;
+      price = price * momentumFactor + baseTrend * trendFactor;
 
       // Prevent extreme outliers
       price = Math.max(cardCurrentPrice * 0.05, Math.min(cardCurrentPrice * 2.5, price));
@@ -134,7 +137,7 @@ export function getTopMovers(): {
       monthlyData,
     };
 
-    if (change > 0) {
+    if (change >= 0) {
       gainers.push(mover);
     } else {
       losers.push(mover);
@@ -142,8 +145,8 @@ export function getTopMovers(): {
   });
 
   // Sort by absolute change
-  gainers.sort((a, b) => b.priceEnd - b.priceStart - (a.priceEnd - a.priceStart));
-  losers.sort((a, b) => a.priceEnd - a.priceStart - (b.priceEnd - b.priceStart));
+  gainers.sort((a, b) => (b.priceEnd - b.priceStart) - (a.priceEnd - a.priceStart));
+  losers.sort((a, b) => (a.priceEnd - a.priceStart) - (b.priceEnd - b.priceStart)); // More negative = bigger loss
 
   return {
     gainers: gainers.slice(0, 5),
