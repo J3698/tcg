@@ -284,7 +284,7 @@ export default function HomeScreen() {
                 </ThemedText>
               </View>
 
-              <View style={[styles.lineChart, { height: 150 }]}>
+              <View style={[styles.lineChart, { height: 100 }]}>
                 <View style={styles.chartArea}>
                   {/* Draw lines */}
                   {card.monthlyData.map((value, lineIdx, arr) => {
@@ -383,7 +383,7 @@ export default function HomeScreen() {
                 </ThemedText>
               </View>
 
-              <View style={[styles.lineChart, { height: 150 }]}>
+              <View style={[styles.lineChart, { height: 100 }]}>
                 <View style={styles.chartArea}>
                   {/* Draw lines */}
                   {card.monthlyData.map((value, lineIdx, arr) => {
