@@ -26,9 +26,10 @@ export const collectionCards: CollectionCard[] = [
 ];
 
 // Seed for deterministic random number generation
-function seededRandom(seed: number): number {
-  const x = Math.sin(seed++) * 10000;
-  return x - Math.floor(x);
+let randomSeed = 12345;
+function seededRandom(): number {
+  randomSeed = (randomSeed * 9301 + 49297) % 233280;
+  return randomSeed / 233280;
 }
 
 /**
@@ -38,7 +39,6 @@ function seededRandom(seed: number): number {
 export function generatePortfolioData(): number[] {
   const points = 200;
   const collectionData: number[] = [];
-  let randomSeed = 12345; // Fixed seed for deterministic generation
 
   // Generate individual price trends for each card
   const cardPrices = collectionCards.map(card => {
@@ -51,12 +51,12 @@ export function generatePortfolioData(): number[] {
       const baseTrend = cardCurrentPrice * 0.15 + progress * cardCurrentPrice * 0.85;
 
       // Larger daily swings: -15% to +15%
-      const changePercent = (seededRandom(randomSeed++) - 0.5) * 30;
+      const changePercent = (seededRandom() - 0.5) * 30;
       price = price * (1 + changePercent / 100);
 
       // Random market events/spikes: 15% chance of significant move (±10% to ±25%)
-      if (seededRandom(randomSeed++) < 0.15) {
-        const eventSize = (seededRandom(randomSeed++) - 0.5) * 0.35;
+      if (seededRandom() < 0.15) {
+        const eventSize = (seededRandom() - 0.5) * 0.35;
         price = price * (1 + eventSize);
       }
 
