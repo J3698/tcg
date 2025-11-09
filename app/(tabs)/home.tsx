@@ -5,6 +5,7 @@ import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { collectionCards, portfolioData } from '@/constants/portfolio-data';
 
 type TrendPeriod = 'day' | 'week' | 'month' | 'year' | 'all';
 
@@ -22,74 +23,6 @@ export default function HomeScreen() {
     { label: 'All', value: 'all' },
   ];
 
-  // Portfolio collection data
-  const collectionCards = [
-    { name: 'Charizard', set: 'Base Set', grade: '8', price: '$1,600' },
-    { name: 'Blastoise', set: 'Base Set', grade: '8', price: '$1,200' },
-    { name: 'Venusaur', set: 'Base Set', grade: '7', price: '$950' },
-    { name: 'Pikachu', set: 'Base Set', grade: '9', price: '$2,100' },
-    { name: 'Dragonite', set: 'Base Set', grade: '7', price: '$850' },
-    { name: 'Gyarados', set: 'Base Set', grade: '8', price: '$1,400' },
-    { name: 'Arcanine', set: 'Base Set', grade: '8', price: '$1,100' },
-    { name: 'Alakazam', set: 'Base Set', grade: '7', price: '$950' },
-    { name: 'Machamp', set: 'Base Set', grade: '9', price: '$1,950' },
-    { name: 'Golem', set: 'Base Set', grade: '8', price: '$1,350' },
-    { name: 'Flareon', set: 'Base Set', grade: '8', price: '$1,050' },
-    { name: 'Lapras', set: 'Base Set', grade: '7', price: '$900' },
-  ];
-
-  const generateFullPortfolioData = () => {
-    // Generate realistic market data for entire collection with 200 data points over 3 years
-    // 200 points = 3 years of data, approximately 1 point every 5.5 days
-    const points = 200;
-    const collectionData = [];
-
-    // Generate individual price trends for each card
-    const cardPrices = collectionCards.map(card => {
-      const data = [];
-      const cardCurrentPrice = parseInt(card.price.replace(/[$,]/g, ''));
-      let price = cardCurrentPrice * 0.15; // Start at 15% of current value
-
-      for (let i = 0; i < points; i++) {
-        const progress = i / points;
-        const baseTrend = cardCurrentPrice * 0.15 + progress * cardCurrentPrice * 0.85;
-
-        // Larger daily swings: -15% to +15%
-        const changePercent = (Math.random() - 0.5) * 30;
-        price = price * (1 + changePercent / 100);
-
-        // Random market events/spikes: 15% chance of significant move (±10% to ±25%)
-        if (Math.random() < 0.15) {
-          const eventSize = (Math.random() - 0.5) * 0.35;
-          price = price * (1 + eventSize);
-        }
-
-        // Smooth towards trend: 92% momentum, 8% trend
-        price = price * 0.92 + baseTrend * 0.08;
-
-        // Prevent extreme outliers
-        price = Math.max(cardCurrentPrice * 0.05, Math.min(cardCurrentPrice * 2.5, price));
-
-        data.push(Math.round(price));
-      }
-      return data;
-    });
-
-    // Sum all card prices at each point to get total portfolio value
-    for (let i = 0; i < points; i++) {
-      let total = 0;
-      cardPrices.forEach(cardData => {
-        total += cardData[i];
-      });
-      collectionData.push(Math.round(total));
-    }
-
-    return collectionData;
-  };
-
-  // Generate full data once
-  const allPortfolioData = generateFullPortfolioData();
-
   // Get data based on trend period
   const getPortfolioData = () => {
     // 200 points over 3 years
@@ -99,11 +32,11 @@ export default function HomeScreen() {
     // Year = last 150 points (approx last 825 days / 2.25 years)
     // All = all 200 points (3 years)
     const data = {
-      day: allPortfolioData.slice(-8),
-      week: allPortfolioData.slice(-40),
-      month: allPortfolioData.slice(-80),
-      year: allPortfolioData.slice(-150),
-      all: allPortfolioData,
+      day: portfolioData.slice(-8),
+      week: portfolioData.slice(-40),
+      month: portfolioData.slice(-80),
+      year: portfolioData.slice(-150),
+      all: portfolioData,
     };
     return data[portfolioTrend];
   };
