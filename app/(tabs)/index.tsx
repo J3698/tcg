@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Pressable, Text, ScrollView, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, Pressable, Text, ScrollView, ActivityIndicator, Modal, KeyboardAvoidingView } from 'react-native';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -24,18 +24,51 @@ export default function ScanScreen() {
   const insets = useSafeAreaInsets();
   const [scannedCard, setScannedCard] = useState<ScannedCard | null>(null);
   const [loading, setLoading] = useState(false);
+  const [certModalVisible, setCertModalVisible] = useState(false);
+  const [certNumber, setCertNumber] = useState('');
+  const [dotCount, setDotCount] = useState(1);
   const colors = Colors[colorScheme ?? 'light'];
 
+  React.useEffect(() => {
+    if (!certModalVisible) return;
+
+    let direction = 1; // 1 for increasing, -1 for decreasing
+    let count = 1;
+
+    const interval = setInterval(() => {
+      count += direction;
+
+      if (count === 3) {
+        direction = -1;
+      } else if (count === -1) {
+        direction = 1;
+        count = 0;
+      }
+
+      setDotCount(count);
+    }, 300);
+
+    return () => clearInterval(interval);
+  }, [certModalVisible]);
+
   const handleTakePicture = async () => {
-    // Use a sample Pokémon card image URL (simulating camera)
+    // Using demo image for now
     const demoImageUrl = 'https://images.pokemontcg.io/base1/4.png';
     simulateScan(demoImageUrl);
   };
 
-  const handleUpload = async () => {
-    // Use a different sample card for upload demo
-    const demoImageUrl = 'https://images.pokemontcg.io/base1/2.png';
-    simulateScan(demoImageUrl);
+  const handleUpload = () => {
+    setCertModalVisible(true);
+  };
+
+  const handleCertNumberSubmit = async () => {
+    if (certNumber.trim()) {
+      setCertModalVisible(false);
+      // Use a different sample card for demo
+      const demoImageUrl = 'https://images.pokemontcg.io/base1/2.png';
+      simulateScan(demoImageUrl);
+      setCertNumber('');
+    }
   };
 
   const simulateScan = async (imageUri: string) => {
@@ -181,10 +214,70 @@ export default function ScanScreen() {
         <Pressable
           style={[styles.largeButton, { borderColor: colors.tint, borderWidth: 1, backgroundColor: 'transparent' }]}
           onPress={handleUpload}>
-          <IconSymbol name="arrow.up" size={14} color={colors.tint} />
-          <Text style={[styles.largeButtonText, { color: colors.tint }]}>Upload Image</Text>
+          <IconSymbol name="pencil" size={14} color={colors.tint} />
+          <Text style={[styles.largeButtonText, { color: colors.tint }]}>Certification Number</Text>
         </Pressable>
       </ThemedView>
+
+      {/* Certification Number Modal */}
+      <Modal
+        visible={certModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setCertModalVisible(false)}
+      >
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+          <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.3)' }]}>
+            <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
+              <View style={styles.modalHeader}>
+                <ThemedText type="title" style={styles.modalTitle}>Enter Certification Number</ThemedText>
+                <Pressable onPress={() => setCertModalVisible(false)}>
+                  <IconSymbol name="xmark" size={24} color={colors.text} />
+                </Pressable>
+              </View>
+
+              {/* Display input value */}
+              <View style={[styles.certNumberDisplay, { borderColor: '#001f3f' }]}>
+                <ThemedText style={[styles.certNumberText, { color: '#001f3f' }]}>
+                  {certNumber || '.'.repeat(dotCount)}
+                </ThemedText>
+              </View>
+
+              {/* Number Keypad */}
+              <View style={styles.keypadContainer}>
+                <View style={styles.keypad}>
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((num) => (
+                    <Pressable
+                      key={num}
+                      style={[styles.keypadButton]}
+                      onPress={() => setCertNumber(certNumber + num.toString())}
+                    >
+                      <ThemedText style={styles.keypadButtonText}>{num}</ThemedText>
+                    </Pressable>
+                  ))}
+
+                  {/* Backspace button */}
+                  <Pressable
+                    style={[styles.keypadButton]}
+                    onPress={() => setCertNumber(certNumber.slice(0, -1))}
+                  >
+                    <IconSymbol name="delete.left" size={18} color={colors.text} />
+                  </Pressable>
+                </View>
+
+                {/* Enter Button */}
+                <Pressable
+                  style={[styles.enterButton, { opacity: certNumber ? 1 : 0.5 }]}
+                  onPress={handleCertNumberSubmit}
+                  disabled={!certNumber}
+                >
+                  <ThemedText style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>Enter</ThemedText>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </ThemedView>
   );
 }
@@ -511,5 +604,76 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: 'white',
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    paddingBottom: 0,
+  },
+  modalContent: {
+    height: '50%',
+    borderTopLeftRadius: 6,
+    borderTopRightRadius: 6,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 20,
+    gap: 12,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 0,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  certNumberDisplay: {
+    borderWidth: 1,
+    borderRadius: 4,
+    padding: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 48,
+    backgroundColor: 'rgba(0,31,63,0.02)',
+  },
+  certNumberText: {
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: 2,
+  },
+  keypadContainer: {
+    gap: 12,
+    flex: 0,
+  },
+  keypad: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'space-between',
+  },
+  keypadButton: {
+    width: '31%',
+    height: 44,
+    borderRadius: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  keypadButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    textAlignVertical: 'center',
+  },
+  enterButton: {
+    width: '100%',
+    height: 44,
+    borderRadius: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#001f3f',
   },
 });

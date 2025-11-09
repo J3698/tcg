@@ -32,24 +32,37 @@ function seededRandom(): number {
   return randomSeed / 233280;
 }
 
+export interface PortfolioDataPoint {
+  date: Date;
+  value: number;
+}
+
 /**
  * Generate deterministic portfolio data based on collection cards
  * Uses seeded random numbers so data stays consistent across sessions
- * Also returns individual card price histories
+ * Also returns individual card price histories with timestamps
  */
 export function generatePortfolioDataWithCards(): {
-  portfolio: number[];
-  cardPrices: Map<string, number[]>;
+  portfolio: PortfolioDataPoint[];
+  cardPrices: Map<string, PortfolioDataPoint[]>;
 } {
   const points = 200;
-  const collectionData: number[] = [];
-  const cardPrices = new Map<string, number[]>();
+  const daysInPeriod = 3 * 365; // 3 years of data
+  const collectionDataWithDates: PortfolioDataPoint[] = [];
+  const cardPrices = new Map<string, PortfolioDataPoint[]>();
 
   // Generate individual price trends for each card
   collectionCards.forEach((card, cardIdx) => {
-    const data: number[] = [];
+    const data: PortfolioDataPoint[] = [];
     const cardCurrentPrice = parseInt(card.price.replace(/[$,]/g, ''));
     let price = cardCurrentPrice * 0.15; // Start at 15% of current value
+
+    // Cards 0-4 (Charizard, Blastoise, Venusaur, Pikachu, Dragonite) will decline in the last month
+    const willDecline = cardIdx < 5;
+
+    const today = new Date();
+    const startDate = new Date(today);
+    startDate.setDate(startDate.getDate() - daysInPeriod);
 
     for (let i = 0; i < points; i++) {
       const progress = i / points;
@@ -69,12 +82,25 @@ export function generatePortfolioDataWithCards(): {
       // Add variation: some cards have less upward bias than others
       const momentumFactor = 0.92 - (cardIdx % 3) * 0.05; // Some cards have 87%, 92% momentum
       const trendFactor = 1 - momentumFactor;
-      price = price * momentumFactor + baseTrend * trendFactor;
+
+      // In the last 80 points (monthly period), force declining cards to trend downward
+      let adjustedTrend = baseTrend;
+      if (willDecline && i >= 120) {
+        // For declining cards in the last 80 points, invert the trend to go downward
+        adjustedTrend = cardCurrentPrice * 0.95 - ((i - 120) / 80) * cardCurrentPrice * 0.4;
+      }
+
+      price = price * momentumFactor + adjustedTrend * trendFactor;
 
       // Prevent extreme outliers
       price = Math.max(cardCurrentPrice * 0.05, Math.min(cardCurrentPrice * 2.5, price));
 
-      data.push(Math.round(price));
+      // Calculate date for this point
+      const pointDate = new Date(startDate);
+      const daysElapsed = Math.floor((daysInPeriod / points) * i);
+      pointDate.setDate(pointDate.getDate() + daysElapsed);
+
+      data.push({ date: pointDate, value: Math.round(price) });
     }
     cardPrices.set(card.name, data);
   });
@@ -82,13 +108,15 @@ export function generatePortfolioDataWithCards(): {
   // Sum all card prices at each point to get total portfolio value
   for (let i = 0; i < points; i++) {
     let total = 0;
+    let dateRef = new Date();
     cardPrices.forEach(cardData => {
-      total += cardData[i];
+      total += cardData[i].value;
+      dateRef = cardData[i].date;
     });
-    collectionData.push(Math.round(total));
+    collectionDataWithDates.push({ date: dateRef, value: Math.round(total) });
   }
 
-  return { portfolio: collectionData, cardPrices };
+  return { portfolio: collectionDataWithDates, cardPrices };
 }
 
 // Pre-generate and cache the data
@@ -122,10 +150,11 @@ export function getTopMovers(): {
 
     // Get last 80 points (1 month)
     const monthlyData = cardData.slice(-monthDataPoints);
-    const priceStart = monthlyData[0];
-    const priceEnd = monthlyData[monthlyData.length - 1];
+    const priceStart = monthlyData[0].value;
+    const priceEnd = monthlyData[monthlyData.length - 1].value;
     const change = priceEnd - priceStart;
     const percentChange = ((change / priceStart) * 100);
+    const monthlyPriceValues = monthlyData.map(dp => dp.value);
 
     const mover: TopMover = {
       name: card.name,
@@ -134,7 +163,7 @@ export function getTopMovers(): {
       percentChange,
       priceStart,
       priceEnd,
-      monthlyData,
+      monthlyData: monthlyPriceValues,
     };
 
     if (change >= 0) {
