@@ -232,14 +232,25 @@ export default function HomeScreen() {
         <ThemedView style={[styles.lineChartContainer, { borderColor: colors.tabIconDefault }]}>
           <View style={{ flexDirection: 'row', flex: 1 }}>
             {/* Y-axis labels */}
-            <View style={{ width: 45, paddingRight: 10 }}>
-              <View style={{ height: 300, justifyContent: 'space-between', paddingVertical: 0 }}>
-                {yAxisTicks.slice().reverse().map((tick, idx) => (
-                  <ThemedText key={`y-tick-${idx}`} style={styles.axisLabel}>
+            <View style={{ width: 45, paddingRight: 10, height: 300, position: 'relative' }}>
+              {yAxisTicks.map((tick, idx) => {
+                const yPercent = 5 + ((maxValue - tick) / dataRange) * 90;
+                return (
+                  <ThemedText
+                    key={`y-tick-${idx}`}
+                    style={[
+                      styles.axisLabel,
+                      {
+                        position: 'absolute',
+                        right: 0,
+                        top: `${yPercent}%`,
+                        transform: [{ translateY: -8 }],
+                      },
+                    ]}>
                     ${tick}
                   </ThemedText>
-                ))}
-              </View>
+                );
+              })}
             </View>
 
             <View style={{ flex: 1 }}>
