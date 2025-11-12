@@ -1,33 +1,28 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, Pressable, Text, ScrollView, ActivityIndicator, Modal, KeyboardAvoidingView } from 'react-native';
-import { Image } from 'expo-image';
+import React, { useState, useRef } from 'react';
+import { View, StyleSheet, Pressable, Text, ActivityIndicator, Modal, KeyboardAvoidingView } from 'react-native';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-
-interface ScannedCard {
-  id: string;
-  name: string;
-  set: string;
-  cardNumber: string;
-  imageUri: string;
-  estimatedValue: number;
-  condition: 'mint' | 'near-mint' | 'lightly-played' | 'moderately-played' | 'heavily-played';
-  scanDate: string;
-}
+import { supabase } from '@/utils/supabase';
+import * as Crypto from 'expo-crypto';
+import * as FileSystem from 'expo-file-system/legacy';
 
 export default function ScanScreen() {
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
-  const [scannedCard, setScannedCard] = useState<ScannedCard | null>(null);
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [certModalVisible, setCertModalVisible] = useState(false);
   const [certNumber, setCertNumber] = useState('');
   const [dotCount, setDotCount] = useState(1);
+  const [permission, requestPermission] = useCameraPermissions();
   const colors = Colors[colorScheme ?? 'light'];
+  const cameraRef = useRef<CameraView>(null);
 
   React.useEffect(() => {
     if (!certModalVisible) return;
@@ -52,9 +47,126 @@ export default function ScanScreen() {
   }, [certModalVisible]);
 
   const handleTakePicture = async () => {
-    // Using demo image for now
-    const demoImageUrl = 'https://images.pokemontcg.io/base1/4.png';
-    simulateScan(demoImageUrl);
+    if (!cameraRef.current) {
+      console.error('Camera ref not available');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      console.log('=== START TAKE PICTURE ===');
+
+      // Take picture
+      console.log('Taking picture...');
+      const photo = await cameraRef.current.takePictureAsync({
+        quality: 0.5, // Lower quality for faster upload
+      });
+      console.log('Picture taken:', photo?.uri, 'width:', photo?.width, 'height:', photo?.height);
+
+      if (!photo) {
+        console.error('No photo returned');
+        setLoading(false);
+        return;
+      }
+
+      // Get current user
+      console.log('Getting user session...');
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('User session:', session?.user?.id);
+
+      if (!session?.user) {
+        console.error('No user session');
+        setLoading(false);
+        return;
+      }
+
+      // Generate unique filename
+      const userId = session.user.id;
+      const uuid = Crypto.randomUUID();
+      const filePath = `${userId}/${uuid}.jpg`;
+      console.log('File path:', filePath);
+
+      // Read the file as base64
+      console.log('Reading file as base64...');
+      const base64 = await FileSystem.readAsStringAsync(photo.uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      console.log('Base64 length:', base64.length);
+
+      // Decode base64 to binary
+      console.log('Converting to binary...');
+      const binaryString = atob(base64);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      console.log('Bytes array length:', bytes.length, 'bytes (~', Math.round(bytes.length / 1024), 'KB)');
+
+      // Upload to Supabase storage
+      console.log('Starting upload to Supabase storage bucket: cards');
+      console.log('Upload size check - will upload:', Math.round(bytes.length / 1024 / 1024 * 100) / 100, 'MB');
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('cards')
+        .upload(filePath, bytes, {
+          contentType: 'image/jpeg',
+          upsert: false,
+        });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        console.error('Upload error message:', uploadError.message);
+        console.error('Upload error details:', JSON.stringify(uploadError));
+        setLoading(false);
+        return;
+      }
+
+      console.log('Upload successful:', uploadData);
+      console.log('Image uploaded to:', filePath);
+
+      // Call edge function
+      console.log('Calling edge function with image path:', filePath);
+      const { data: functionData, error: functionError } = await supabase.functions.invoke(
+        'scrape-ebay-from-cert',
+        {
+          body: { image_path: filePath },
+        }
+      );
+
+      if (functionError) {
+        console.error('Function error:', functionError);
+        console.error('Function error message:', functionError.message);
+        console.error('Function error details:', JSON.stringify(functionError));
+        setLoading(false);
+        return;
+      }
+
+      console.log('Function result:', functionData);
+      console.log('Function success:', functionData?.success);
+
+      // Process results and navigate to results screen
+      if (functionData.success) {
+        const cardData = {
+          imageUri: photo.uri,
+          psa_card: functionData.psa_card,
+          listings: functionData.listings,
+          statistics: functionData.statistics,
+        };
+
+        // Navigate to results screen with card data
+        router.push({
+          pathname: '/card-results',
+          params: {
+            data: JSON.stringify(cardData),
+          },
+        });
+      }
+
+      setLoading(false);
+    } catch (error) {
+      console.error('Error taking picture:', error);
+      setLoading(false);
+    }
   };
 
   const handleUpload = () => {
@@ -64,31 +176,9 @@ export default function ScanScreen() {
   const handleCertNumberSubmit = async () => {
     if (certNumber.trim()) {
       setCertModalVisible(false);
-      // Use a different sample card for demo
-      const demoImageUrl = 'https://images.pokemontcg.io/base1/2.png';
-      simulateScan(demoImageUrl);
+      // TODO: Implement cert number lookup
       setCertNumber('');
     }
-  };
-
-  const simulateScan = async (imageUri: string) => {
-    setLoading(true);
-    // Simulate API call to card recognition service
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    const mockCard: ScannedCard = {
-      id: 'charizard-1-holo',
-      name: 'Charizard',
-      set: 'Base Set',
-      cardNumber: '4/102',
-      imageUri: imageUri,
-      estimatedValue: 2500,
-      condition: 'near-mint',
-      scanDate: new Date().toLocaleDateString(),
-    };
-
-    setScannedCard(mockCard);
-    setLoading(false);
   };
 
   if (loading) {
@@ -102,101 +192,49 @@ export default function ScanScreen() {
     );
   }
 
-  if (scannedCard) {
-    return (
-      <ScrollView contentContainerStyle={[styles.container, { backgroundColor: colors.background }]}>
-        <ThemedView style={styles.cardPreview}>
-          <Image
-            source={{ uri: scannedCard.imageUri }}
-            style={styles.cardImage}
-            contentFit="contain"
-          />
-        </ThemedView>
-
-        <ThemedView style={styles.cardDetailsContainer}>
-          <ThemedView style={styles.headerRow}>
-            <View>
-              <ThemedText type="title" style={styles.cardName}>
-                {scannedCard.name}
-              </ThemedText>
-              <ThemedText style={styles.cardSet}>
-                {scannedCard.set} • #{scannedCard.cardNumber}
-              </ThemedText>
-            </View>
-          </ThemedView>
-
-          <ThemedView style={styles.statsGrid}>
-            <ThemedView style={styles.statBox}>
-              <ThemedText style={styles.statLabel}>Est. Value</ThemedText>
-              <ThemedText type="title" style={styles.statValue}>
-                ${(scannedCard.estimatedValue / 100).toFixed(2)}
-              </ThemedText>
-            </ThemedView>
-
-            <ThemedView style={styles.statBox}>
-              <ThemedText style={styles.statLabel}>Condition</ThemedText>
-              <ThemedText
-                type="defaultSemiBold"
-                style={[
-                  styles.conditionBadge,
-                  {
-                    color: getConditionColor(scannedCard.condition),
-                  },
-                ]}>
-                {scannedCard.condition
-                  .split('-')
-                  .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                  .join(' ')}
-              </ThemedText>
-            </ThemedView>
-          </ThemedView>
-
-          <ThemedView style={styles.section}>
-            <ThemedText type="subtitle">Recent Sales (Last 10)</ThemedText>
-            <ThemedView style={styles.salesList}>
-              {[
-                { price: 2800, date: '2 days ago', condition: 'Mint' },
-                { price: 2450, date: '1 week ago', condition: 'Near Mint' },
-                { price: 1950, date: '10 days ago', condition: 'Lightly Played' },
-                { price: 2600, date: '2 weeks ago', condition: 'Mint' },
-                { price: 2200, date: '3 weeks ago', condition: 'Near Mint' },
-              ].map((sale, idx) => (
-                <ThemedView key={idx} style={styles.saleItem}>
-                  <View>
-                    <ThemedText type="defaultSemiBold">${sale.price}</ThemedText>
-                    <ThemedText style={styles.saleDetail}>{sale.condition}</ThemedText>
-                  </View>
-                  <ThemedText style={styles.saleDetail}>{sale.date}</ThemedText>
-                </ThemedView>
-              ))}
-            </ThemedView>
-          </ThemedView>
-
-          <Pressable
-            style={[styles.button, styles.secondaryButton, { borderColor: colors.tint }]}
-            onPress={() => {
-              setScannedCard(null);
-            }}>
-            <Text style={[styles.buttonText, { color: colors.tint }]}>Scan Another Card</Text>
-          </Pressable>
-        </ThemedView>
-      </ScrollView>
-    );
-  }
-
   return (
     <ThemedView style={[styles.container, { backgroundColor: colors.background, flex: 1, paddingTop: insets.top }]}>
-      <ThemedView style={styles.cameraWindow}>
-        <View style={styles.smallCornerIcon}>
-          <View style={[styles.smallCorner, styles.smallTopLeft, { borderColor: colors.tint }]} />
-          <View style={[styles.smallCorner, styles.smallTopRight, { borderColor: colors.tint }]} />
-          <View style={[styles.smallCorner, styles.smallBottomLeft, { borderColor: colors.tint }]} />
-          <View style={[styles.smallCorner, styles.smallBottomRight, { borderColor: colors.tint }]} />
-        </View>
-        <ThemedText style={styles.cameraText}>
-          Ready to Scan
-        </ThemedText>
-      </ThemedView>
+      <View style={styles.cameraWindow}>
+        {!permission ? (
+          // Loading permissions
+          <ThemedView style={styles.permissionContainer}>
+            <ActivityIndicator size="small" color={colors.tint} />
+            <ThemedText style={styles.cameraText}>Loading camera...</ThemedText>
+          </ThemedView>
+        ) : !permission.granted ? (
+          // Need to request permission
+          <ThemedView style={styles.permissionContainer}>
+            <View style={styles.smallCornerIcon}>
+              <View style={[styles.smallCorner, styles.smallTopLeft, { borderColor: colors.tint }]} />
+              <View style={[styles.smallCorner, styles.smallTopRight, { borderColor: colors.tint }]} />
+              <View style={[styles.smallCorner, styles.smallBottomLeft, { borderColor: colors.tint }]} />
+              <View style={[styles.smallCorner, styles.smallBottomRight, { borderColor: colors.tint }]} />
+            </View>
+            <ThemedText style={styles.cameraText}>Camera access required</ThemedText>
+            <Pressable
+              style={[styles.permissionButton, { backgroundColor: colors.tint }]}
+              onPress={requestPermission}>
+              <Text style={styles.permissionButtonText}>Grant Permission</Text>
+            </Pressable>
+          </ThemedView>
+        ) : (
+          // Show camera preview
+          <>
+            <CameraView ref={cameraRef} style={styles.camera} facing="back" />
+            <View style={styles.cameraOverlay}>
+              <View style={styles.smallCornerIcon}>
+                <View style={[styles.smallCorner, styles.smallTopLeft, { borderColor: 'white' }]} />
+                <View style={[styles.smallCorner, styles.smallTopRight, { borderColor: 'white' }]} />
+                <View style={[styles.smallCorner, styles.smallBottomLeft, { borderColor: 'white' }]} />
+                <View style={[styles.smallCorner, styles.smallBottomRight, { borderColor: 'white' }]} />
+              </View>
+              <Text style={[styles.cameraText, { color: 'white' }]}>
+                Ready to Scan
+              </Text>
+            </View>
+          </>
+        )}
+      </View>
 
       <ThemedView style={[styles.buttonsContainer, { paddingHorizontal: 16, paddingBottom: 24 }]}>
         <Pressable
@@ -282,23 +320,6 @@ export default function ScanScreen() {
   );
 }
 
-function getConditionColor(condition: string): string {
-  switch (condition) {
-    case 'mint':
-      return '#10B981';
-    case 'near-mint':
-      return '#3B82F6';
-    case 'lightly-played':
-      return '#F59E0B';
-    case 'moderately-played':
-      return '#EF4444';
-    case 'heavily-played':
-      return '#7C3AED';
-    default:
-      return '#6B7280';
-  }
-}
-
 const styles = StyleSheet.create({
   container: {
     paddingBottom: 0,
@@ -309,12 +330,40 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderStyle: 'solid',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    overflow: 'hidden',
+  },
+  camera: {
+    flex: 1,
+    width: '100%',
+  },
+  cameraOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 16,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    opacity: 0.5,
+    pointerEvents: 'none',
+  },
+  permissionContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+  },
+  permissionButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+  },
+  permissionButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '500',
   },
   cameraText: {
     fontSize: 13,
